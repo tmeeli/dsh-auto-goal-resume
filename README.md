@@ -93,11 +93,11 @@ dsh plugin --profile web add auto-goal-resume
 
 ```bash
 # 1. 注册 bundle:把插件加入 profile 的 bundle 层
-#    编辑 ~/.dsh/profiles/web/package.json,在 dsh.profile.bundles 数组加一行:
+#    编辑 ~/.dsh/profiles/web/package.json,在 dsh.profile.bundles 数组追加一行:
 #    "auto-goal-resume"
 
-# 2. 重启生效
-systemctl restart dsh-web.service
+# 2. 重启生效(按你实际的 DSH 启动方式重启,例如 systemd: systemctl restart dsh-web.service,
+#    或 Termux / 容器 / 前台进程等各自的启动命令)
 ```
 
 ### 方式二:一键脚本(全自动,推荐)
@@ -115,11 +115,7 @@ bash install.sh
 bash install.sh --local
 ```
 
-完成后重启 DSH:
-
-```bash
-systemctl restart dsh-web.service
-```
+完成后重启 DSH(按你实际的启动方式,例如 systemd 服务 `systemctl restart dsh-web.service`,或你使用的其他方式)。
 
 ### 方式三:手动(等价于方式一的拆解)
 
@@ -127,16 +123,14 @@ systemctl restart dsh-web.service
 cd ~/.dsh/profiles/web && pnpm add auto-goal-resume
 ```
 
-然后在 `~/.dsh/profiles/web/package.json` 的 `dsh.profile.bundles` 数组加一行:
+然后在 `~/.dsh/profiles/web/package.json` 的 `dsh.profile.bundles` 数组**追加**一行(保持你已有的 bundle 不变,示例仅为结构示意):
 
 ```json
 {
   "dsh": {
     "profile": {
       "bundles": [
-        "@deepseek-ai/dsh-base",
-        "@deepseek-ai/dsh-web-app",
-        "dsh-pocket-tools",
+        "…你已有的 bundle…",
         "auto-goal-resume"
       ]
     }
@@ -176,10 +170,10 @@ auto-goal-resume: scan complete
 | `session X: goal armed (...)` | **成功重新武装**,driver 将自动驱动后续轮次 |
 | `session X: agent could not be resumed` | 冷恢复失败,该会话跳过,不影响其他会话 |
 
-检查日志:
+检查日志(按你实际的日志查看方式,例如 systemd 环境):
 
 ```bash
-journalctl -u dsh-web.service | grep auto-goal-resume
+journalctl -u dsh-web.service | grep auto-goal-resume   # systemd 示例,服务名按实际调整
 ```
 
 ---
@@ -196,8 +190,8 @@ rm -rf /tmp/auto-goal-test && mkdir -p /tmp/auto-goal-test
 #    "在 /tmp/auto-goal-test/ 下创建 step1.txt ~ step5.txt,
 #     每轮至少创建 1 个,全部完成后验证并 complete"
 
-# 3. 第一轮执行一部分(step1、step2),然后重启 DSH:
-systemctl restart dsh-web.service
+# 3. 第一轮执行一部分(step1、step2),然后重启 DSH(按你实际的启动方式重启,
+#    例如 systemd: systemctl restart dsh-web.service):
 
 # 4. 重启后 —— 无需任何人工指令:
 #    - 插件自动扫描 → 发现活跃目标 → 冷恢复 agent → resume
