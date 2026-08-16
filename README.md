@@ -81,60 +81,63 @@ DSH 启动
 
 ## 安装
 
-### 1. 放置插件包
-
-把整个插件目录放到本地,例如:
+### 方式一:一键脚本(推荐)
 
 ```bash
-mkdir -p ~/.dsh/plugins
-cp -r auto-goal-resume ~/.dsh/plugins/
+# 本地执行
+bash install.sh
+
+# 或从仓库远程执行
+bash <(curl -s https://gitee.com/okmyapp/dsh-auto-goal-resume/raw/master/install.sh)
 ```
 
-目录结构:
+脚本自动完成:复制插件包 → 注册为 web profile 的 bundle → 创建符号链接 → 清理旧的手动配置 → 校验组合树。可重复执行(幂等)。完成后重启 DSH:
 
-```
-~/.dsh/plugins/auto-goal-resume/
-├── package.json   # 包清单(main 指向 index.js)
-├── index.js       # 插件本体(零依赖)
-└── README.md
+```bash
+systemctl restart dsh-web.service
 ```
 
-### 2. 注册依赖(link 方式)
+### 方式二:bundle 注册(手动,2 行)
 
-编辑 `~/.dsh/profiles/web/package.json`,在 `dependencies` 中追加:
+本插件是 **bundle 包**(自带 `cordis.patch.yml`,通过 `dsh.bundle.patch` 声明)。安装只需两处注册:
+
+1. 把插件目录放到本地(如 `~/.dsh/plugins/auto-goal-resume/`),并创建符号链接:
+
+```bash
+mkdir -p ~/.dsh/plugins ~/.dsh/profiles/web/node_modules
+ln -sfn ~/.dsh/plugins/auto-goal-resume \
+  ~/.dsh/profiles/web/node_modules/auto-goal-resume
+```
+
+2. 编辑 `~/.dsh/profiles/web/package.json`,追加 `dependencies` 并在 `dsh.profile.bundles` 数组加一行:
 
 ```json
 {
+  "dsh": {
+    "profile": {
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app",
+        "dsh-pocket-tools",
+        "auto-goal-resume"
+      ]
+    }
+  },
   "dependencies": {
     "auto-goal-resume": "link:/root/.dsh/plugins/auto-goal-resume"
   }
 }
 ```
 
-在 `~/.dsh/profiles/web/node_modules/` 下创建符号链接(与 `dsh-pocket-tools` 同款方式):
+> 卸载 = 从 `bundles` 数组和 `dependencies` 中移除这两处即可,不会污染任何 patch 文件。
+
+### 验证组合
 
 ```bash
-ln -sfn /root/.dsh/plugins/auto-goal-resume \
-  /root/.dsh/profiles/web/node_modules/auto-goal-resume
+dsh --profile web --dump-config | grep auto-goal-resume
 ```
 
-### 3. 挂载插件行
-
-编辑 `~/.dsh/profiles/web/cordis.patch.yml`,追加:
-
-```yaml
-- insert:
-    - id: auto-goal-resume
-      name: auto-goal-resume
-```
-
-### 4. 重启生效
-
-```bash
-systemctl restart dsh-web.service
-```
-
-> 路径示例基于本仓库实际部署;请按你的 `$DSH_HOME` 实际路径调整。也可通过 `dsh --profile web --dump-config` 确认插件行已进入组合树。
+确认插件行已进入组合树后重启生效。
 
 ---
 

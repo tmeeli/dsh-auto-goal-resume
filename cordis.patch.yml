@@ -1,0 +1,5 @@
+# dsh-auto-goal-resume:DSH 重启后自动续跑有活跃目标(goal)的会话。
+# 组合包层:按包名引用本包(host 面 main 由 loader 解析)。
+- insert:
+    - id: auto-goal-resume
+      name: auto-goal-resume

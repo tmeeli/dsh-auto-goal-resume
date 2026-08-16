@@ -4,5 +4,10 @@
   "type": "module",
   "private": true,
   "description": "重启后自动续跑有活跃目标(goal)的会话,无需人工说\"继续\"。",
-  "main": "./index.js"
+  "main": "./index.js",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
 }
