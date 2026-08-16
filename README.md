@@ -83,29 +83,47 @@ DSH 启动
 
 插件已发布到 npm: **`auto-goal-resume`**([npmjs.com/package/auto-goal-resume](https://www.npmjs.com/package/auto-goal-resume))。
 
-### 方式一:一键脚本(推荐)
+### 方式一:DSH 原生快捷指令(最快)
 
 ```bash
-# npm 模式(默认):pnpm add auto-goal-resume + 自动注册 bundle
+dsh plugin --profile web add auto-goal-resume
+```
+
+这条指令会在 web profile 目录中转发 `pnpm add`,从 npm 安装依赖。装完后再注册 bundle(一行),然后重启:
+
+```bash
+# 1. 注册 bundle:把插件加入 profile 的 bundle 层
+#    编辑 ~/.dsh/profiles/web/package.json,在 dsh.profile.bundles 数组加一行:
+#    "auto-goal-resume"
+
+# 2. 重启生效
+systemctl restart dsh-web.service
+```
+
+### 方式二:一键脚本(全自动,推荐)
+
+不想手动改配置就用这个,自动完成「安装依赖 + 注册 bundle + 校验」:
+
+```bash
+# npm 模式(默认)
 bash <(curl -s https://gitee.com/okmyapp/dsh-auto-goal-resume/raw/master/install.sh)
 
-# 或本地执行(效果相同)
+# 或本地执行
 bash install.sh
 
 # 本地开发模式(link 引用,改代码即时生效)
 bash install.sh --local
 ```
 
-脚本自动完成:安装依赖 → 注册为 web profile 的 bundle → 清理旧的手动配置 → 校验组合树。可重复执行(幂等)。完成后重启 DSH:
+完成后重启 DSH:
 
 ```bash
 systemctl restart dsh-web.service
 ```
 
-### 方式二:手动(等价于 `dsh plugin` 转发)
+### 方式三:手动(等价于方式一的拆解)
 
 ```bash
-# 在 profile 目录安装依赖(等价: dsh plugin --profile web add auto-goal-resume)
 cd ~/.dsh/profiles/web && pnpm add auto-goal-resume
 ```
 
@@ -126,7 +144,7 @@ cd ~/.dsh/profiles/web && pnpm add auto-goal-resume
 }
 ```
 
-> 卸载 = 从 `bundles` 数组移除该行,再 `pnpm remove auto-goal-resume` 即可。
+> 卸载 = 从 `bundles` 数组移除该行,再 `dsh plugin --profile web remove auto-goal-resume`(或 `pnpm remove auto-goal-resume`)即可。
 
 ### 验证组合
 
