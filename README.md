@@ -81,35 +81,35 @@ DSH 启动
 
 ## 安装
 
+插件已发布到 npm: **`auto-goal-resume`**([npmjs.com/package/auto-goal-resume](https://www.npmjs.com/package/auto-goal-resume))。
+
 ### 方式一:一键脚本(推荐)
 
 ```bash
-# 本地执行
+# npm 模式(默认):pnpm add auto-goal-resume + 自动注册 bundle
+bash <(curl -s https://gitee.com/okmyapp/dsh-auto-goal-resume/raw/master/install.sh)
+
+# 或本地执行(效果相同)
 bash install.sh
 
-# 或从仓库远程执行
-bash <(curl -s https://gitee.com/okmyapp/dsh-auto-goal-resume/raw/master/install.sh)
+# 本地开发模式(link 引用,改代码即时生效)
+bash install.sh --local
 ```
 
-脚本自动完成:复制插件包 → 注册为 web profile 的 bundle → 创建符号链接 → 清理旧的手动配置 → 校验组合树。可重复执行(幂等)。完成后重启 DSH:
+脚本自动完成:安装依赖 → 注册为 web profile 的 bundle → 清理旧的手动配置 → 校验组合树。可重复执行(幂等)。完成后重启 DSH:
 
 ```bash
 systemctl restart dsh-web.service
 ```
 
-### 方式二:bundle 注册(手动,2 行)
-
-本插件是 **bundle 包**(自带 `cordis.patch.yml`,通过 `dsh.bundle.patch` 声明)。安装只需两处注册:
-
-1. 把插件目录放到本地(如 `~/.dsh/plugins/auto-goal-resume/`),并创建符号链接:
+### 方式二:手动(等价于 `dsh plugin` 转发)
 
 ```bash
-mkdir -p ~/.dsh/plugins ~/.dsh/profiles/web/node_modules
-ln -sfn ~/.dsh/plugins/auto-goal-resume \
-  ~/.dsh/profiles/web/node_modules/auto-goal-resume
+# 在 profile 目录安装依赖(等价: dsh plugin --profile web add auto-goal-resume)
+cd ~/.dsh/profiles/web && pnpm add auto-goal-resume
 ```
 
-2. 编辑 `~/.dsh/profiles/web/package.json`,追加 `dependencies` 并在 `dsh.profile.bundles` 数组加一行:
+然后在 `~/.dsh/profiles/web/package.json` 的 `dsh.profile.bundles` 数组加一行:
 
 ```json
 {
@@ -122,14 +122,11 @@ ln -sfn ~/.dsh/plugins/auto-goal-resume \
         "auto-goal-resume"
       ]
     }
-  },
-  "dependencies": {
-    "auto-goal-resume": "link:/root/.dsh/plugins/auto-goal-resume"
   }
 }
 ```
 
-> 卸载 = 从 `bundles` 数组和 `dependencies` 中移除这两处即可,不会污染任何 patch 文件。
+> 卸载 = 从 `bundles` 数组移除该行,再 `pnpm remove auto-goal-resume` 即可。
 
 ### 验证组合
 
