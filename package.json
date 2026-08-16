@@ -1,0 +1,8 @@
+{
+  "name": "auto-goal-resume",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "重启后自动续跑有活跃目标(goal)的会话,无需人工说\"继续\"。",
+  "main": "./index.js"
+}
