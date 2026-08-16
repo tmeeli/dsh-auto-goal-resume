@@ -51,31 +51,49 @@ DSH 的 goal 系统(同会话目标)把**目标本身**——目标文本、生�
 
 ## 工作原理
 
+插件提供**两层自动恢复**:
+
 ```
-DSH 启动
-  │
-  ├─ 约 20 秒后(服务就绪),扫描全部持久化会话
-  │     sessionQuery.listSessions()
-  │     sessionQuery.readSession(id)  →  解析日志中的 goal/change 事件
-  │
-  ├─ 筛选:目标仍 active 且 roundsStarted < maxGoalRounds
-  │
-  └─ 对每个命中会话:
-        1. agent 不在内存 → 冷恢复(带 preset 组合)
-              sessionPersistence.inspect(id)
-              → 解析会话记录的 preset(agent-preset/selected 事件)
-              → ctx.agents.resume({ resumeSessionId, agentOptions, setup })
-        2. 校验当前目标未变(goal id / phase)
-        3. ctx.goals.resume(agent, { id, revision })  → 重新武装
-        4. goal-round-driver 在 agent 空闲时自动驱动下一轮
-              → 目标轮次自动执行,直到 complete / blocked / 轮次上限
+① 实时层(agent/session-start 事件)
+   任何会话被打开/恢复 → 立即检查该会话活跃目标 → resume
+   (覆盖:重启后你打开会话;运行中 apiproxy 冷恢复 agent)
+
+② 兜底层(启动扫描)
+   DSH 启动约 20 秒后,扫描全部持久化会话
+     sessionQuery.listSessions()
+     sessionQuery.readSession(id)  →  解析日志中的 goal/change 事件
+   对每个命中会话:
+     1. agent 不在内存 → 冷恢复(带 preset 组合)
+           sessionPersistence.inspect(id)
+           → 解析会话记录的 preset(agent-preset/selected 事件)
+           → ctx.agents.resume({ resumeSessionId, agentOptions, setup })
+     2. tryResumeGoal:校验目标 active / 未 armed / 轮次未满
+     3. ctx.goals.resume(agent, { id, revision })  → 重新武装
+     4. goal-round-driver 在 agent 空闲时自动驱动下一轮
+           → 目标轮次自动执行,直到 complete / blocked / 轮次上限
 ```
 
 关键点:
 
 - **preset 一致性**:恢复 agent 时从**日志**解析 preset(而不是创建时的 header),因为会话可能在空白期切换过 preset——这与 DSH 官方 `session.create` / `resume` 的语义一致;
-- **时序**:插件在启动后 20 秒首扫,若依赖服务未就绪则每 60 秒重试,最多 15 次,保证启动窗口内完成;
-- **与 apiproxy 共存**:如果用户已打开某个会话(agent 已由前端恢复),插件直接复用 live agent,只做 resume,不重复创建。
+- **实时兜底**:启动扫描与 apiproxy 并发冷恢复同一会话的竞态由实时层天然化解——apiproxy 恢复完成后触发 `session-start`,插件随即 resume,无需等下次重启;
+- **可配置**:时序参数与总开关可在 cordis.yml 的 `config` 覆盖(见下文「配置」)。
+
+---
+
+## 配置
+
+插件接受可选的 `config` 块(省略时用默认值):
+
+```yaml
+- id: auto-goal-resume
+  name: auto-goal-resume
+  config:
+    enabled: true        # 总开关,false 时插件不加载任何逻辑
+    firstDelayMs: 20000  # 启动后首次扫描延迟(毫秒)
+    retryDelayMs: 60000  # 服务未就绪时的重试间隔(毫秒)
+    maxRetries: 15       # 最大重试次数
+```
 
 ---
 
